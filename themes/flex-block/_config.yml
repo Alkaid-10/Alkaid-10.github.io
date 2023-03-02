@@ -5,20 +5,23 @@ menu:
   关于: /about
 
 # 主页banner图
-banner: https://qiniu.sukoshi.xyz/src/images/68686407_p0.jpg
+banner: /background.jpg
+# https://qiniu.sukoshi.xyz/src/images/68686407_p0.jpg
 
 # 站点通知信息
-notice: flex-block主题部分重构，详情查看https://github.com/miiiku/flex-block
+notice: 
 
 # 作者信息
 author:
-  name: Sukoshi
-  avatar: https://s.gravatar.com/avatar/2d6b803eea37de0257620d5fabee7e64?s=200&r=g&d=retro
-  description: 贵在坚持
+  name: Alkaid
+  avatar: /avatar.jpg  
+  #https://s.gravatar.com/avatar/fd4d0306328f13aa533a9f98da7539be?s=80
+  description: "有志者，事竟成，破釜沉舟，百二秦关终属楚。
+  苦心人，天不负，卧薪尝胆，三千越甲可吞吴。"
 
 toc:
-  max_depth: 3 # 生成 TOC 的最大深度
-  min_depth: 2 # 生成 TOC 的最小深度
+  max_depth: 6 # 生成 TOC 的最大深度
+  min_depth: 4 # 生成 TOC 的最小深度
 
 comments:
   enable: false
@@ -89,8 +92,8 @@ favicon: /favicon.ico
 social_icon:
   enable: true
   icons:
-    ins     :
-    zhihu   :
-    weibo   : 
-    github  : https://github.com/miiiku/
-    twitter : https://twitter.com/guanquanhong
+    ins     : x
+    zhihu   : x
+    weibo   : x
+    github  : https://github.com/Alkaid-10
+    twitter : x
