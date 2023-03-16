@@ -141,3 +141,97 @@ tags: ChromeOS Graphic Stack
  通常来说，Overlay 的方式是性能比较好的，因为 GPU 硬件实现这个效果基本上是 0 开销。当你引入 OpenGL 来完成渲染时，会引入一次额外的 buffer copy（想想我们前面提到的 4K 屏的例子）。所以到底是是用 Overlay 方式展示还是使用 OpenGL 渲染额外效果，是一个功能性和性能的取舍。
  当然，现在 Chrome Compositor 正在迁移到 Skia Compositor 的过程中， Skia Compos 基于自己实现的一个 Rendering Library 取代了 OpenGL。它的工作流程和 Chome Compositor 一样：先试试 Overlay 行不行，不行咱就走自己的渲染引擎。
 
+## UI 层
+
+<img src="./ChromeOS-Graphic-Stack-解析/ChromeOS-结构图.png">
+
+### ChromeOS UI：Ash（Aura Shell）
+
+ChromeOS Compositor 的其中一个 client, 它充分利用了 Compositor 提供的各种特性并实现了各种独特的效果（如预览，下拉阴影等）。所有的 UI（窗口，按钮，壁纸）都是在这个 client 中完成。
+
+### Exo(Exosphere)
+
+Exo 能够让所有已知的 web 应用和 Chrome-native 的应用在 ChromeOS 中展示。在整个 ChromeOS Graphic 的架构图中，Exo 扮演的角色是作为让非 web 应用和非 ChromeOS 原生的应用能够在 ChromeOS 中展示的接口。
+
+Exo 本身是ChromeOS 的 Display Compositor 的一个 client
+
+#### Exo 到底做了什么？
+
+Exo 位于 Chrome Compositor 的上层，允许其他 UI 层的 client （安卓，linux应用，虚拟机应用），和 Chrome 原生的应用一起被 Chrome Compositor 合成一个 image。
+
+#### Exo 如何实现这点？
+
+一方面，Exo 作为 display server 实现了 Wayland 协议，允许应用向 Exo 发送展示 buffer（即展示自己的界面）的请求。
+
+另一方面，在从 Wayland 侧拿到要展示的界面后，Exo 会将它们插入 compositing tree 交给 Chorme Compositor 去合成。
+
+#### Exo for ChromeOS
+
+除了基本的功能外，Exo 还为 ChromeOS 实现了一些额外的特性(如 display scaling, window frames for blending)
+
+### ARC++(Android application support for ChromeOS)
+
+**ARC++** 允许安卓应用以 Chrome 原生的图形表现运行在 ChromeOS 中。
+**ARC++** 嵌入了完整的安卓系统(包括了 **SurfaceFlinger** 和 **Hardware Composer**)。
+
+- Surface Flinger
+  安卓的 Displaye Server
+
+- Hardware Composer
+  Surface Flinger 的 backend
+
+**ARC++** 与安卓系统展示图形不同的地方在于，从硬件处完成渲染拿到 buffer 后，它并不将其直接显示，而是交给 Exo （Exo本身是一个 display server），由 Exo 来交给 Chrome Compositor 来合成一个 image。
+需要注意的是，**ARC++** 在渲染拿到 buffer 的过程中依然是通过 DMAbufs 来实现的，因此不会产生 buffer copy 带来的性能问题。
+
+安卓本身有一个 Gralloc 库来实现GPU memory allocation，在 ChromeOS 中，它在 MiniGBM 顶层实现了 Gralloc。这样做是为了充分复用之前提到的MinGBM 之下的那些驱动。
+
+### Linux Crostini(Linux application support for ChromeOS)
+
+Linux 应用运行在虚拟机中，**Crostini** 则使其能够拥有和 Chrome 原生一样的图形表现能力。
+
+通过 **Virgil** ，**Crostini** 实现了对图形硬件的完全虚拟化。
+**Virgil** 将应用的图形命令序列化，交给 host（访问GPU硬件,反序列化后）执行。序列化和反序列化的过程是为了保证数据安全。
+
+在图形展示方面，**Crostini** 与安卓有一些不同：它在虚拟机中运行基于 X11 Wayland，XWayland 协议的 Display Server。然后和 Exo 通信。
+
+## Show Case
+
+### HTML --> Screen
+
+<img src="./ChromeOS-Graphic-Stack-解析/HTML-to-Screen.png">
+
+可以看到，HTML 通过 Blink 完成渲染后，首先传递给 Viz 进程，Viz 进程通过 GPU Raster 过程获取用于最终展示的 buffer。之后交给 Compositor 来合成为一个 image。最终交给 Ozone 给底层硬件用于展示。
+
+HTML的显示过程代表了 ChromeOS 原生的 app 的显示过程。这个过程也可以用下图来描述：
+
+<img src="./ChromeOS-Graphic-Stack-解析/HTML-to-Screen-step.png">
+
+### Android app --> Screen
+
+<img src="./ChromeOS-Graphic-Stack-解析/Android-to-Screen.png">
+
+安卓应用通过 Gralloc 申请 buffer，通过 GLES/Vk 完成渲染后，将 buffer 交给 Surface Flinger，告诉它我希望显示这个buffer。Surface Flinger 接着访问 HWC ，HWC 则将这个请求交给 Exo 来实现，通过 Exo 转换后，后续的流程就和前面 HTML 的 Compositor 以后的流程相同了。 
+
+这个过程用流程图描述如下：
+
+<img src="./ChromeOS-Graphic-Stack-解析/Android-to-Screen-step.png">
+
+### Linux app --> Screen 
+
+<img src="./ChromeOS-Graphic-Stack-解析/Linux-to-Screen.png">
+
+Linux app 的显示有一点点复杂。在通过 Virgil 完成渲染并拿到 buffer 后，Linux app 会将它交给 XWayland，因为 Linux app 使用的是 X11，所以需要通过 XWayland 将其转换为 Wayland API 请求供 Exo 使用。之后要 通过 Sommelier（一个 daemon process） 将 buffer 在虚拟机中的 id 转换为在 ChromeOS 中的 id。之后就可以交给 Exo 来处理显示请求了。Exo 之后的步骤则和之前一样。
+这个过程也可以用如下流程图描述：
+<img src="./ChromeOS-Graphic-Stack-解析/Linux-to-Screen-step.png">
+
+### Display plug in(外接屏)
+
+<img src="./ChromeOS-Graphic-Stack-解析/plugin.png">
+
+在外接屏硬件接入时，首先会触发一个中断。Kernel 会捕获这个中断，唤起一个 interrupt handler 将中断转换为一个 user space 的 event 并发送给 Ozone。Ozone 接受 event 以后告知 Display Configurator 更新显示设置，Display Configurator 会查询一次系统的显示 state。
+直到这个阶段，我们的外接屏其实都不会显示内容（这也是为什么我们插入外接屏的时候会有一段时间的黑屏）。
+Display Configurator 决定好给外接屏的显示设置后，就会让 Ozone 渲染要显示给外接屏的buffer并显示在外接屏上，这个时候我们就能看到外接屏显示内容了。
+细心的读者可能看到右上角还有一个箭头，那个的意思就是外接屏接入后，还会通知系统应用（比如settings 应用更新外接屏的信息）。
+
+具体的流程图：
+<img src="./ChromeOS-Graphic-Stack-解析/plugin-step.png">
