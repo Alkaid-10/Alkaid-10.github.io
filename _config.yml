@@ -40,7 +40,10 @@ external_link:
 filename_case: 0
 render_drafts: false
 post_asset_folder: true
-relative_link: false
+marked:
+  prependRoot: true
+  postAsset: true
+relative_link: true
 future: true
 highlight:
   enable: true
@@ -102,5 +105,5 @@ theme: flex-block
 ## Docs: https://hexo.io/docs/one-command-deployment
 deploy:
   type: git
-  repository: https://github.com/Alkaid-10/Alkaid-10.github.io.git
+  repository: git@github.com:Alkaid-10/Alkaid-10.github.io.git
   branch: gh-pages
