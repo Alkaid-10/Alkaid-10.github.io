@@ -109,7 +109,7 @@
           
             <h2 class="title-sub-wrap new-date">
               <span>最后更新于</span>
-              <time  class="article-updated" datetime="2024-05-26T08:06:32.257Z" itemprop="dateUpdated">2024-05-26</time>
+              <time  class="article-updated" datetime="2024-05-26T08:09:12.884Z" itemprop="dateUpdated">2024-05-26</time>
             </h2>
           
           
@@ -143,7 +143,7 @@
         <h1 id="文心一言架构调研"><a href="#文心一言架构调研" class="headerlink" title="文心一言架构调研"></a>文心一言架构调研</h1><p>当前技术结论基于charles抓包 与反编译结果推测</p>
 <h2 id="业务场景分析"><a href="#业务场景分析" class="headerlink" title="业务场景分析"></a>业务场景分析</h2><h3 id="形象"><a href="#形象" class="headerlink" title="形象"></a>形象</h3><p>文心的bot的形象动效比较多，交互上在输入侧等用户主动交互的场景会有陪伴动效，体验上更有一种是『人』在听你说话的感觉。</p>
 <h3 id="对话场景"><a href="#对话场景" class="headerlink" title="对话场景"></a>对话场景</h3><h4 id="文本消息对话"><a href="#文本消息对话" class="headerlink" title="文本消息对话"></a>文本消息对话</h4><p>文本消息上屏无明显延迟<br>无断网自动恢复续传</p>
-<h5 id="技术推测"><a href="#技术推测" class="headerlink" title="技术推测"></a>技术推测</h5><p>使用chunk机制通过短链 <code>post https://yiyanapp.baidu.com/chat/completions</code> 来发送消息并拉取回复。<br>从上屏表现和chunk回复的时序来看，推测和豆包的实现机制类似，chunk的每包消息到达后就会开始送屏。<br>断网重试机制上文心使用的是用户主动重试，没有自动重试</p>
+<h5 id="技术推测"><a href="#技术推测" class="headerlink" title="技术推测"></a>技术推测</h5><p>使用chunk机制通过短链 <code>post https://yiyanapp.baidu.com/chat/completions</code> 来发送消息并拉取回复。<br>从上屏表现和chunk回复的时序来看，chunk的每包消息到达后就会开始送屏。<br>断网重试机制上文心使用的是用户主动重试，没有自动重试</p>
 <h4 id="文本消息打断"><a href="#文本消息打断" class="headerlink" title="文本消息打断"></a>文本消息打断</h4><p>无自动打断能力，只有主动打断入口</p>
 <h5 id="技术推测-1"><a href="#技术推测-1" class="headerlink" title="技术推测"></a>技术推测</h5><p>使用短链<code>post https://yiyanapp.baidu.com/chat/completionsStop</code>来主动发起打断，没有自动打断的能力</p>
 <h4 id="文本消息建议"><a href="#文本消息建议" class="headerlink" title="文本消息建议"></a>文本消息建议</h4><p>suggest 出现的间隔略长</p>
@@ -163,8 +163,8 @@
 <h4 id="实时通话"><a href="#实时通话" class="headerlink" title="实时通话"></a>实时通话</h4><p>和语音消息发送同一个链路，非全双工，无法自动打断<br>全双工会更符合贴合自然对话的场景，但是逻辑设计上会更加复杂</p>
 <h3 id="发现场景-feed"><a href="#发现场景-feed" class="headerlink" title="发现场景(feed)"></a>发现场景(feed)</h3><h4 id="发现场景获取"><a href="#发现场景获取" class="headerlink" title="发现场景获取"></a>发现场景获取</h4><h4 id="技术推测-5"><a href="#技术推测-5" class="headerlink" title="技术推测"></a>技术推测</h4><p>app启动时使用短链<code>https://yiyanapp.baidu.com/api/admin/feed/box</code> 获取所有推送流的主题和具体bot，对于多tab页这种业务场景来说可以随时线上控制内容，方便做变化和更新</p>
 <h3 id="bot管理"><a href="#bot管理" class="headerlink" title="bot管理"></a>bot管理</h3><h4 id="技术推测-6"><a href="#技术推测-6" class="headerlink" title="技术推测"></a>技术推测</h4><p>通过短链<code>get https://yiyanapp.baidu.com/api/bot/botlist</code>获取所有的bot信息</p>
-<h3 id="搜索场景"><a href="#搜索场景" class="headerlink" title="搜索场景"></a>搜索场景</h3><p>文心支持拍照搜索，不过功能上来看更像是集成了百度搜索的sdk的能力。类似于抖音进豆包<br>从用ai强化搜索的逻辑上看，抖音进豆包更像是使用抖音的能力拓展豆包的ai结果展示的种类。文心的百度进文心有点类似于把现有的同质功能（搜索）集成进来。</p>
-<h2 id="架构推演"><a href="#架构推演" class="headerlink" title="架构推演"></a>架构推演</h2><h3 id="结论"><a href="#结论" class="headerlink" title="结论"></a>结论</h3><p>文心架构层次偏少，业务层没有分离出类似flowSDK的业务sdk，以业务层+基建层形式完成架构。<br>推测原因：快速搭建业务并利用自己成熟的云服务体系完成应用的开发。同时因为没有文心融入其他业务的需求，所以没有对业务层做拆分<br>参考点：如果要快速搭建起业务的话，尽可能用现有的内部基础服务和云平台的服务，集中人力在业务层的开发上，尽可能少的对依赖的基础服务和云服务做封装<br>如果要考虑业务后续有可能有迁移需求的话，要对业务层进行一定层次的拆分,最好是将依赖的三方基建sdk以依赖注入的方式进行解耦</p>
+<h3 id="搜索场景"><a href="#搜索场景" class="headerlink" title="搜索场景"></a>搜索场景</h3><p>文心支持拍照搜索，不过功能上来看更像是集成了百度搜索的sdk的能力。<br>从用ai强化搜索的逻辑上看，文心的百度进文心有点类似于把现有的同质功能（搜索）集成进来。</p>
+<h2 id="架构推演"><a href="#架构推演" class="headerlink" title="架构推演"></a>架构推演</h2><h3 id="结论"><a href="#结论" class="headerlink" title="结论"></a>结论</h3><p>文心架构层次偏少，业务层没有分离出业务sdk，以业务层+基建层形式完成架构。<br>推测原因：快速搭建业务并利用自己成熟的云服务体系完成应用的开发。同时因为没有文心融入其他业务的需求，所以没有对业务层做拆分<br>参考点：如果要快速搭建起业务的话，尽可能用现有的内部基础服务和云平台的服务，集中人力在业务层的开发上，尽可能少的对依赖的基础服务和云服务做封装<br>如果要考虑业务后续有可能有迁移需求的话，要对业务层进行一定层次的拆分,最好是将依赖的三方基建sdk以依赖注入的方式进行解耦</p>
 <h3 id="文心一言架构推测"><a href="#文心一言架构推测" class="headerlink" title="文心一言架构推测"></a>文心一言架构推测</h3><img src="/2024/05/21/%E6%96%87%E5%BF%83%E4%B8%80%E8%A8%80%E6%9E%B6%E6%9E%84%E8%B0%83%E7%A0%94/wenxin.png">
 
 <p>目前来看文心的app在百度内部的定位还是比较独立的，百度更倾向于将其他自己的产品集成进来（比如他强势的百度搜索）。</p>
@@ -190,7 +190,7 @@
 <li>com.baidu.strace.perfetto&#x2F;core: strace库，用于追踪系统行为,其中perfetto用于性能追踪</li>
 <li>com.baidu.speech: 百度的语音识别sdk，文心的asr，tts播报均做在本地参考链接</li>
 <li>com.baidu.sofire.utility: 百度的云平台临时授权服务，用于调用百度的bce上的api鉴权用</li>
-<li>com.baidu.searchbox: 百度搜索sdk（关系应该类似于抖音进豆包）,文心有部分搜索功能应该是这里的百度搜索部分,然后就是其『我』tab页明显是百度系页面的ui风格，怀疑也是用的这个sdk</li>
+<li>com.baidu.searchbox: 百度搜索sdk,文心有部分搜索功能应该是这里的百度搜索部分,然后就是其『我』tab页明显是百度系页面的ui风格，怀疑也是用的这个sdk</li>
 <li>com.baidu.sapi2&#x2F;com.baidu.protect&#x2F;com.baidu.pass: 百度的passport相关sdk</li>
 <li>com.baidu.location:百度的位置sdk</li>
 <li>com.baidu.browser.sailor: 百度浏览器的sdk？可能用于其webview，也可能是百度浏览器进文心</li>
@@ -217,10 +217,10 @@
 <ol>
 <li>文心的消息问答没有使用长链上行，使用短链chunk机制进行消息的收发。这点行为上和gpt是相同的</li>
 <li>没有消息的自动打断机制。断网重试机制在业务中没有体现出自动重试机制，目前来看还是需要主动请求发起重试</li>
-<li>文心的suggest prompt 在回复chunk包到达后单独发suggest请求获取，flow的suggest跟随回复一起由chunk拉下来，文心做法的优劣在于：</li>
+<li>文心的suggest prompt 在回复chunk包到达后单独发suggest请求获取，文心做法的优劣在于：</li>
 </ol>
 <ul>
-<li>好处：可以用生成的回复的消息去获取suggest prompt，suggest prompt会更能引导用户使用（flow如果调整prompt让大模型自动根据生成结果产生suggest作为消息回复一起下发是否也能实现同等效果）</li>
+<li>好处：可以用生成的回复的消息去获取suggest prompt，suggest prompt会更能引导用户使用</li>
 <li>坏处：suggest的出现会比较慢，在回复消息展示后suggest prompt出现有明显延迟（可以在服务端做优化提在产生完整回复的时候就去向模型获取prompt）</li>
 </ul>
 <h2 id="分析技巧"><a href="#分析技巧" class="headerlink" title="分析技巧"></a>分析技巧</h2><h3 id="charles抓包"><a href="#charles抓包" class="headerlink" title="charles抓包"></a>charles抓包</h3><p>对于很多业务场景如果找不到分析的入口，可以先从网络请求开始分析其交互链路</p>
